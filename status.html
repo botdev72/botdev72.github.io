@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>System Monitor</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+margin:0;
+padding:30px;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+}
+
+.container{
+max-width:800px;
+margin:auto;
+}
+
+.site{
+background:#1e293b;
+padding:15px;
+margin-bottom:10px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.name{
+font-weight:bold;
+}
+
+.status{
+font-weight:bold;
+}
+
+.up{
+color:#00ff88;
+}
+
+.down{
+color:#ff4d4d;
+}
+
+.dot{
+height:10px;
+width:10px;
+border-radius:50%;
+display:inline-block;
+margin-right:6px;
+}
+
+.green{
+background:#00ff88;
+}
+
+.red{
+background:#ff4d4d;
+}
+
+.footer{
+text-align:center;
+margin-top:20px;
+font-size:12px;
+color:#aaa;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h1>System Monitoring</h1>
+
+<div class="container" id="monitor"></div>
+
+<div class="footer">
+Auto refresh setiap 15 detik
+</div>
+
+
+<script>
+
+const sites = [
+
+{
+name:"app.bayurizki.my.id",
+url:"https://app.bayurizki.my.id"
+},
+
+{
+name:"unknow.bayurizki.my.id",
+url:"https://unknow.bayurizki.my.id"
+},
+
+{
+name:"botdev72.github.io",
+url:"https://botdev72.github.io"
+},
+
+{
+name:"brztech.my.id",
+url:"https://brztech.my.id"
+},
+
+{
+name:"brzfams.web-id.id",
+url:"https://brzfams.web-id.id"
+}
+
+];
+
+
+async function checkSite(site){
+
+try{
+
+let controller = new AbortController();
+let timeout = setTimeout(() => controller.abort(), 5000);
+
+await fetch(site.url, {
+mode:"no-cors",
+signal:controller.signal
+});
+
+clearTimeout(timeout);
+
+return true;
+
+}catch{
+
+return false;
+
+}
+
+}
+
+
+async function runCheck(){
+
+let container = document.getElementById("monitor");
+container.innerHTML="";
+
+for(let site of sites){
+
+let alive = await checkSite(site);
+
+let statusText = alive ? "HIDUP" : "MATI";
+let statusClass = alive ? "up" : "down";
+let dotClass = alive ? "green" : "red";
+
+let row = document.createElement("div");
+
+row.className="site";
+
+row.innerHTML=`
+<div class="name">${site.name}</div>
+<div class="status ${statusClass}">
+<span class="dot ${dotClass}"></span>
+[ ${statusText} ]
+</div>
+`;
+
+container.appendChild(row);
+
+}
+
+}
+
+
+runCheck();
+
+setInterval(runCheck,15000);
+
+</script>
+
+</body>
+
+</html>
