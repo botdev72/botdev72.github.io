@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>System Monitor</title>
+<title>NOC System Monitor</title>
 
 <style>
 
 body{
-font-family:Arial;
-background:#0f172a;
+background:#0b0f1a;
+font-family:Segoe UI,Arial;
 color:white;
 margin:0;
 padding:30px;
@@ -20,25 +20,32 @@ padding:30px;
 
 h1{
 text-align:center;
-margin-bottom:30px;
+color:#00eaff;
+margin-bottom:40px;
 }
 
 .container{
-max-width:800px;
+max-width:900px;
 margin:auto;
 }
 
 .site{
-background:#1e293b;
-padding:15px;
-margin-bottom:10px;
+background:#111827;
+border:1px solid #1f2937;
+padding:18px;
+margin-bottom:12px;
 border-radius:8px;
+}
+
+.row{
 display:flex;
 justify-content:space-between;
 align-items:center;
+flex-wrap:wrap;
 }
 
 .name{
+font-size:16px;
 font-weight:bold;
 }
 
@@ -47,144 +54,152 @@ font-weight:bold;
 }
 
 .up{
-color:#00ff88;
+color:#00ff9c;
 }
 
 .down{
-color:#ff4d4d;
+color:#ff4c4c;
 }
 
-.dot{
-height:10px;
-width:10px;
-border-radius:50%;
-display:inline-block;
-margin-right:6px;
+.latency{
+font-size:13px;
+color:#9ca3af;
+margin-top:6px;
 }
 
-.green{
-background:#00ff88;
+.bar{
+height:6px;
+background:#1f2937;
+border-radius:10px;
+margin-top:10px;
+overflow:hidden;
 }
 
-.red{
-background:#ff4d4d;
+.bar span{
+display:block;
+height:6px;
+background:#00eaff;
+width:0%;
 }
 
 .footer{
 text-align:center;
-margin-top:20px;
+margin-top:30px;
+color:#9ca3af;
 font-size:12px;
-color:#aaa;
+}
+
+@media(max-width:700px){
+
+.row{
+flex-direction:column;
+align-items:flex-start;
+gap:6px;
+}
+
 }
 
 </style>
 
 </head>
 
-
 <body>
 
-<h1>System Monitoring</h1>
+<h1>NOC System Monitoring</h1>
 
 <div class="container" id="monitor"></div>
 
 <div class="footer">
-Auto refresh setiap 15 detik
+Update Interval 5 sec.
 </div>
-
 
 <script>
 
-const sites = [
+const sites=[
 
-{
-name:"app.bayurizki.my.id",
-url:"https://app.bayurizki.my.id"
-},
-
-{
-name:"unknow.bayurizki.my.id",
-url:"https://unknow.bayurizki.my.id"
-},
-
-{
-name:"botdev72.github.io",
-url:"https://botdev72.github.io"
-},
-
-{
-name:"brztech.my.id",
-url:"https://brztech.my.id"
-},
-
-{
-name:"brzfams.web-id.id",
-url:"https://brzfams.web-id.id"
-}
+{name:"app.bayurizki.my.id",url:"https://app.bayurizki.my.id"},
+{name:"google.com",url:"https://google.com"},
+{name:"botdev72.github.io",url:"https://botdev72.github.io"},
+{name:"brztech.my.id",url:"http://brztech.my.id"},
+{name:"brzfams.web-id.id",url:"http://brzfams.web-id.id"}
 
 ];
 
-
 async function checkSite(site){
+
+let start=performance.now();
 
 try{
 
-let controller = new AbortController();
-let timeout = setTimeout(() => controller.abort(), 5000);
+let controller=new AbortController();
+let timeout=setTimeout(()=>controller.abort(),5000);
 
-await fetch(site.url, {
-mode:"no-cors",
-signal:controller.signal
-});
+await fetch(site.url,{mode:"no-cors",signal:controller.signal});
 
 clearTimeout(timeout);
 
-return true;
+let latency=Math.round(performance.now()-start);
+
+return{up:true,latency};
 
 }catch{
 
-return false;
+return{up:false,latency:null};
 
 }
 
 }
 
 
-async function runCheck(){
+async function run(){
 
-let container = document.getElementById("monitor");
+let container=document.getElementById("monitor");
 container.innerHTML="";
 
 for(let site of sites){
 
-let alive = await checkSite(site);
+let result=await checkSite(site);
 
-let statusText = alive ? "HIDUP" : "MATI";
-let statusClass = alive ? "up" : "down";
-let dotClass = alive ? "green" : "red";
+let status=result.up?"UP":"DOWN";
+let statusClass=result.up?"up":"down";
+let latency=result.latency?result.latency+" ms":"timeout";
 
-let row = document.createElement("div");
+let barWidth=result.latency?Math.min(result.latency/3,100):0;
 
-row.className="site";
+let div=document.createElement("div");
 
-row.innerHTML=`
+div.className="site";
+
+div.innerHTML=`
+
+<div class="row">
+
 <div class="name">${site.name}</div>
+
 <div class="status ${statusClass}">
-<span class="dot ${dotClass}"></span>
-[ ${statusText} ]
+[ ${status} ]
 </div>
+
+</div>
+
+<div class="latency">
+Latency: ${latency}
+</div>
+
+<div class="bar">
+<span style="width:${barWidth}%"></span>
+</div>
+
 `;
 
-container.appendChild(row);
+container.appendChild(div);
 
 }
 
 }
 
-
-runCheck();
-
-setInterval(runCheck,15000);
+run();
+setInterval(run,5000);
 
 </script>
 
